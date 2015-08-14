@@ -34,7 +34,6 @@ public class MongoCursorExample {
         private int count;
 
         public void run() {
-            boolean success = false;
             System.out.println(Thread.currentThread().getName() + " starting");
             try {
                 final DBCursor cursor = oplog.find().sort(new BasicDBObject("$natural", 1)).addOption(Bytes.QUERYOPTION_TAILABLE);
@@ -45,12 +44,11 @@ public class MongoCursorExample {
                 latch.countDown();
                 System.out.println(Thread.currentThread().getName() + " latchDown");
                 cursor.close();
-                success = true;
+            } catch (MongoException e) {
+                System.err.println("Mongo exception " + e);
+                System.exit(1);
             } finally {
                 System.out.println(Thread.currentThread().getName() + " done");
-                if (!success) {
-                    System.exit(1);
-                }
             }
         }
     }
