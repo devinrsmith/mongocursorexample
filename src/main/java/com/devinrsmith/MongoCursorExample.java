@@ -4,8 +4,6 @@ package com.devinrsmith;
 import com.mongodb.*;
 
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 public class MongoCursorExample {
@@ -28,22 +26,32 @@ public class MongoCursorExample {
         }
         latch.await();
         for (int i = 0; i < n - 1; ++i) {
-            System.out.println(cursors[i].results.equals(cursors[i + 1].results));
+            System.out.println(cursors[i].count == cursors[i + 1].count);
         }
     }
 
     private class CursorRunnable implements Runnable {
-        private final List<DBObject> results = new ArrayList<DBObject>();
+        private int count;
 
         public void run() {
+            boolean success = false;
             System.out.println(Thread.currentThread().getName() + " starting");
-            final DBCursor cursor = oplog.find().sort(new BasicDBObject("$natural", 1)).addOption(Bytes.QUERYOPTION_TAILABLE);
-            DBObject next;
-            while ((next = cursor.tryNext()) != null) {
-                results.add(next);
+            try {
+                final DBCursor cursor = oplog.find().sort(new BasicDBObject("$natural", 1)).addOption(Bytes.QUERYOPTION_TAILABLE);
+                DBObject next;
+                while ((next = cursor.tryNext()) != null) {
+                    ++count;
+                }
+                latch.countDown();
+                System.out.println(Thread.currentThread().getName() + " latchDown");
+                cursor.close();
+                success = true;
+            } finally {
+                System.out.println(Thread.currentThread().getName() + " done");
+                if (!success) {
+                    System.exit(1);
+                }
             }
-            latch.countDown();
-            System.out.println(Thread.currentThread().getName() + " done");
         }
     }
 
@@ -54,6 +62,8 @@ public class MongoCursorExample {
             throw new IllegalStateException("No oplog.rs is present");
         }
         final DBCollection oplog = db.getCollection("oplog.rs");
-        new MongoCursorExample(oplog, 10).run();
+        for (int i = 0; i < 100; ++i) {
+            new MongoCursorExample(oplog, 1).run();
+        }
     }
 }
