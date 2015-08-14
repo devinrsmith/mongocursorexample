@@ -60,8 +60,27 @@ public class MongoCursorExample {
             throw new IllegalStateException("No oplog.rs is present");
         }
         final DBCollection oplog = db.getCollection("oplog.rs");
+        final int[] index = new int[1];
+        new Thread(new Runnable() {
+            public void run() {
+                while (true) {
+                    final int startIndex = index[0];
+                    try {
+                        Thread.sleep(30000);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                    if (startIndex == index[0]) {
+                        System.out.println("Maybe blocked");
+                    }
+                }
+            }
+        }).start();
+
         for (int i = 0; i < 100; ++i) {
-            new MongoCursorExample(oplog, 25).run();
+            index[0] = i;
+            new MongoCursorExample(oplog, 10).run();
         }
     }
 }
