@@ -63,7 +63,7 @@ public class MongoCursorExample {
         }
         final DBCollection oplog = db.getCollection("oplog.rs");
         for (int i = 0; i < 100; ++i) {
-            new MongoCursorExample(oplog, 1).run();
+            new MongoCursorExample(oplog, 25).run();
         }
     }
 }
