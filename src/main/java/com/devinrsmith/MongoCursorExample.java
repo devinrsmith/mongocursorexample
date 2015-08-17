@@ -25,16 +25,21 @@ public class MongoCursorExample {
             new Thread(cursors[i]).start();
         }
         latch.await();
+        boolean allSame = true;
         for (int i = 0; i < n - 1; ++i) {
-            System.out.println(cursors[i].count == cursors[i + 1].count);
+            if (cursors[i].count != cursors[i + 1].count) {
+                allSame = false;
+                break;
+            }
         }
+        System.out.println(allSame);
     }
 
     private class CursorRunnable implements Runnable {
         private int count;
 
         public void run() {
-            System.out.println(Thread.currentThread().getName() + " starting");
+            //System.out.println(Thread.currentThread().getName() + " starting");
             try {
                 final DBCursor cursor = oplog.find().sort(new BasicDBObject("$natural", 1)).addOption(Bytes.QUERYOPTION_TAILABLE);
                 DBObject next;
@@ -42,13 +47,13 @@ public class MongoCursorExample {
                     ++count;
                 }
                 latch.countDown();
-                System.out.println(Thread.currentThread().getName() + " latchDown");
+                //System.out.println(Thread.currentThread().getName() + " latchDown");
                 cursor.close();
             } catch (MongoException e) {
                 System.err.println("Mongo exception " + e);
                 System.exit(1);
             } finally {
-                System.out.println(Thread.currentThread().getName() + " done");
+                //System.out.println(Thread.currentThread().getName() + " done");
             }
         }
     }
@@ -60,27 +65,12 @@ public class MongoCursorExample {
             throw new IllegalStateException("No oplog.rs is present");
         }
         final DBCollection oplog = db.getCollection("oplog.rs");
-        final int[] index = new int[1];
-        new Thread(new Runnable() {
-            public void run() {
-                while (true) {
-                    final int startIndex = index[0];
-                    try {
-                        Thread.sleep(30000);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        break;
-                    }
-                    if (startIndex == index[0]) {
-                        System.out.println("Maybe blocked");
-                    }
-                }
-            }
-        }).start();
-
         for (int i = 0; i < 100; ++i) {
-            index[0] = i;
-            new MongoCursorExample(oplog, 10).run();
+            System.out.println("Starting run " + i + " with " + (i + 1) + " cursors");
+            final long startTime = System.currentTimeMillis();
+            new MongoCursorExample(oplog, i + 1).run();
+            final long stopTime = System.currentTimeMillis();
+            System.out.println("Done with run " + i + ": " + (stopTime - startTime) + " millis");
         }
     }
 }
