@@ -75,5 +75,6 @@ public class MongoCursorExample {
             final long stopTime = System.currentTimeMillis();
             System.out.println("Done with run " + i + ": " + (stopTime - startTime) + " millis");
         }
+        client.close();
     }
 }
