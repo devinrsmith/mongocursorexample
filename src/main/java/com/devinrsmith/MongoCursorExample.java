@@ -4,6 +4,7 @@ package com.devinrsmith;
 import com.mongodb.*;
 
 import java.net.UnknownHostException;
+import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 
 public class MongoCursorExample {
@@ -59,8 +60,10 @@ public class MongoCursorExample {
     }
 
     public static void main( String[] args ) throws UnknownHostException, InterruptedException {
-        final MongoClient client = new MongoClient("localhost", 27017);
+        final MongoClient client = new MongoClient(args[0], 27017);
+
         final DB db = client.getDB("local");
+
         if (!db.collectionExists("oplog.rs")) {
             throw new IllegalStateException("No oplog.rs is present");
         }
